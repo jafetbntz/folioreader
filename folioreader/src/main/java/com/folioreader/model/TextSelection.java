@@ -60,4 +60,10 @@ public interface TextSelection {
      * Returns Note linked to the highlight (optional)
      */
     String getNote();
+
+    /**
+     * Return JSON representation of the object
+     * @return
+     */
+    String toJson();
 }
