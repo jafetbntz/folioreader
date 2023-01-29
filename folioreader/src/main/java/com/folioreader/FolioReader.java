@@ -12,6 +12,7 @@ import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import com.folioreader.model.HighLight;
 import com.folioreader.model.HighlightImpl;
+import com.folioreader.model.TextSelectionImpl;
 import com.folioreader.model.locators.ReadLocator;
 import com.folioreader.model.sqlite.DbAdapter;
 import com.folioreader.network.QualifiedTypeConverterFactory;
@@ -20,6 +21,8 @@ import com.folioreader.ui.activity.FolioActivity;
 import com.folioreader.ui.base.OnSaveHighlight;
 import com.folioreader.ui.base.SaveReceivedHighlightTask;
 import com.folioreader.util.OnHighlightListener;
+import com.folioreader.util.OnTranslateListener;
+import com.folioreader.util.OnAddListener;
 import com.folioreader.util.ReadLocatorListener;
 
 import java.util.List;
@@ -51,6 +54,8 @@ public class FolioReader {
     private boolean overrideConfig;
     private int portNumber = Constants.DEFAULT_PORT_NUMBER;
     private OnHighlightListener onHighlightListener;
+    private OnTranslateListener onTranslateListener;
+    private OnAddListener onAddListener;
     private ReadLocatorListener readLocatorListener;
     private OnClosedListener onClosedListener;
     private ReadLocator readLocator;
@@ -78,6 +83,28 @@ public class FolioReader {
                     intent.getSerializableExtra(HighLight.HighLightAction.class.getName());
             if (onHighlightListener != null && highlightImpl != null && action != null) {
                 onHighlightListener.onHighlight(highlightImpl, action);
+            }
+        }
+    };
+
+    private BroadcastReceiver translateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String selectedText = intent.getStringExtra(TextSelectionImpl.INTENT);
+
+            if (onTranslateListener != null && selectedText != null) {
+                onTranslateListener.onTranslate(selectedText);
+            }
+        }
+    };
+
+    private BroadcastReceiver addReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            TextSelectionImpl textSelectionImpl = intent.getParcelableExtra(TextSelectionImpl.INTENT);
+
+            if (onAddListener != null && textSelectionImpl != null) {
+                onAddListener.onAdd(textSelectionImpl);
             }
         }
     };
@@ -124,10 +151,19 @@ public class FolioReader {
         DbAdapter.initialize(context);
 
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
+
         localBroadcastManager.registerReceiver(highlightReceiver,
                 new IntentFilter(HighlightImpl.BROADCAST_EVENT));
+
+        localBroadcastManager.registerReceiver(translateReceiver,
+                new IntentFilter(TextSelectionImpl.BROADCAST_EVENT_TRANSLATE));
+
+        localBroadcastManager.registerReceiver(addReceiver,
+                new IntentFilter(TextSelectionImpl.BROADCAST_EVENT_ADD));
+
         localBroadcastManager.registerReceiver(readLocatorReceiver,
                 new IntentFilter(ACTION_SAVE_READ_LOCATOR));
+
         localBroadcastManager.registerReceiver(closedReceiver,
                 new IntentFilter(ACTION_FOLIOREADER_CLOSED));
     }
@@ -230,6 +266,16 @@ public class FolioReader {
         return singleton;
     }
 
+    public FolioReader setOnTranslateListener(OnTranslateListener onTranslateListener) {
+        this.onTranslateListener = onTranslateListener;
+        return singleton;
+    }
+
+    public FolioReader setOnAddListener(OnAddListener onAddListener) {
+        this.onAddListener = onAddListener;
+        return singleton;
+    }
+
     public FolioReader setReadLocatorListener(ReadLocatorListener readLocatorListener) {
         this.readLocatorListener = readLocatorListener;
         return singleton;
@@ -273,6 +319,8 @@ public class FolioReader {
         if (singleton != null) {
             singleton.readLocator = null;
             singleton.onHighlightListener = null;
+            singleton.onTranslateListener = null;
+            singleton.onAddListener = null;
             singleton.readLocatorListener = null;
             singleton.onClosedListener = null;
         }
@@ -295,6 +343,8 @@ public class FolioReader {
     private void unregisterListeners() {
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(context);
         localBroadcastManager.unregisterReceiver(highlightReceiver);
+        localBroadcastManager.unregisterReceiver(translateReceiver);
+        localBroadcastManager.unregisterReceiver(addReceiver);
         localBroadcastManager.unregisterReceiver(readLocatorReceiver);
         localBroadcastManager.unregisterReceiver(closedReceiver);
     }

@@ -21,8 +21,9 @@
 
     <string name="copy">Copy</string>
     <string name="share">Share</string>
-    <string name="define">Define</string>
+    <string name="define">Translate</string>
     <string name="highlight">Highlight</string>
+    <string name="add">Add</string>
 
     <string name="pages_left">%1$d pages left</string>
     <string name="page_left">%1$d page left</string>

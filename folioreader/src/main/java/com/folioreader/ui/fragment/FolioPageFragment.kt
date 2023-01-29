@@ -43,9 +43,7 @@ import com.folioreader.ui.view.FolioWebView
 import com.folioreader.ui.view.LoadingView
 import com.folioreader.ui.view.VerticalSeekbar
 import com.folioreader.ui.view.WebViewPager
-import com.folioreader.util.AppUtil
-import com.folioreader.util.HighlightUtil
-import com.folioreader.util.UiUtil
+import com.folioreader.util.*
 import com.folioreader.viewmodels.PageTrackerViewModel
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
@@ -415,6 +413,7 @@ class FolioPageFragment(private var pageViewModel: PageTrackerViewModel) : Fragm
 
         mWebview!!.addJavascriptInterface(this, "Highlight")
         mWebview!!.addJavascriptInterface(this, "FolioPageFragment")
+        mWebview!!.addJavascriptInterface(this, "TextSelection")
         mWebview!!.addJavascriptInterface(webViewPager, "WebViewPager")
         mWebview!!.addJavascriptInterface(loadingView!!, "LoadingView")
         mWebview!!.addJavascriptInterface(mWebview!!, "FolioWebView")
@@ -862,7 +861,7 @@ class FolioPageFragment(private var pageViewModel: PageTrackerViewModel) : Fragm
     @JavascriptInterface
     fun onReceiveHighlights(html: String?) {
         if (html != null) {
-            rangy = HighlightUtil.createHighlightRangy(
+            val highlightImpl = HighlightUtil.createHighlightRangy(
                 activity!!.applicationContext,
                 html,
                 mBookId,
@@ -870,6 +869,14 @@ class FolioPageFragment(private var pageViewModel: PageTrackerViewModel) : Fragm
                 spineIndex,
                 rangy
             )
+            if (highlightImpl.id != -1) {
+                HighlightUtil.sendHighlightBroadcastEvent(
+                    context,
+                    highlightImpl,
+                    HighLight.HighLightAction.NEW
+                )
+            }
+            rangy = highlightImpl.rangy
         }
     }
 
@@ -894,7 +901,45 @@ class FolioPageFragment(private var pageViewModel: PageTrackerViewModel) : Fragm
             }
             val rangyString = HighlightUtil.generateRangyString(pageName)
             activity!!.runOnUiThread { loadRangy(rangyString) }
+        }
+    }
 
+    fun add(style: HighlightImpl.HighlightStyle, isAlreadyCreated: Boolean) {
+        if (!isAlreadyCreated) {
+            mWebview!!.loadUrl(
+                String.format(
+                    "javascript:if(typeof ssReader !== \"undefined\"){ssReader.addSelection('%s');}",
+                    HighlightImpl.HighlightStyle.classForStyle(style)
+                )
+            )
+        } else {
+            mWebview!!.loadUrl(
+                String.format(
+                    "javascript:setHighlightStyle('%s')",
+                    HighlightImpl.HighlightStyle.classForStyle(style)
+                )
+            )
+        }
+    }
+
+    @JavascriptInterface
+    fun onReceiveAdd(json: String?) {
+        if (json != null) {
+            val highlightImpl = HighlightUtil.createHighlightRangy(
+                activity!!.applicationContext,
+                json,
+                mBookId,
+                pageName,
+                spineIndex,
+                rangy
+            )
+            if (highlightImpl.id != -1) {
+                AddUtil.sendAddBroadcastEvent(
+                    context,
+                    highlightImpl
+                )
+            }
+            rangy = highlightImpl.rangy
         }
     }
 

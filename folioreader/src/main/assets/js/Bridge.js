@@ -293,12 +293,25 @@ $(function () {
 
         highlightSelection: function (color) {
             try {
-
                 this.highlighter.highlightSelection(color, null);
                 var range = window.getSelection().toString();
                 var params = {content: range, rangy: this.getHighlights(), color: color};
                 this.clearSelection();
+
                 Highlight.onReceiveHighlights(JSON.stringify(params));
+            } catch (err) {
+                console.log("highlightSelection : " + err);
+            }
+        },
+
+        addSelection: function (color) {
+           try {
+                this.highlighter.highlightSelection(color, null);
+                var range = window.getSelection().toString();
+                var params = {content: range, rangy: this.getHighlights(), color: color};
+                this.clearSelection();
+
+                TextSelection.onReceiveAdd(JSON.stringify(params));
             } catch (err) {
                 console.log("highlightSelection : " + err);
             }

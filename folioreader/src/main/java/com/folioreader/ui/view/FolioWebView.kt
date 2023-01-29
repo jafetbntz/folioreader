@@ -33,9 +33,7 @@ import com.folioreader.ui.activity.FolioActivity
 import com.folioreader.ui.activity.FolioActivityCallback
 import com.folioreader.ui.fragment.DictionaryFragment
 import com.folioreader.ui.fragment.FolioPageFragment
-import com.folioreader.util.AppUtil
-import com.folioreader.util.HighlightUtil
-import com.folioreader.util.UiUtil
+import com.folioreader.util.*
 import dalvik.system.PathClassLoader
 import kotlinx.android.synthetic.main.text_selection.view.*
 import org.json.JSONObject
@@ -332,13 +330,15 @@ class FolioWebView : WebView {
             dismissPopupWindow()
             loadUrl("javascript:onTextSelectionItemClicked(${it.id})")
         }
-        viewTextSelection.shareSelection.setOnClickListener {
+
+        viewTextSelection.translateSelection.setOnClickListener {
             dismissPopupWindow()
             loadUrl("javascript:onTextSelectionItemClicked(${it.id})")
         }
-        viewTextSelection.defineSelection.setOnClickListener {
-            dismissPopupWindow()
-            loadUrl("javascript:onTextSelectionItemClicked(${it.id})")
+
+        viewTextSelection.addSelection.setOnClickListener {
+            Log.v(LOG_TAG, "-> onClick -> add to vocabulary")
+            onAddItemsClicked(HighlightStyle.Yellow, false)
         }
     }
 
@@ -354,12 +354,10 @@ class FolioWebView : WebView {
                 Toast.makeText(context, context.getString(R.string.copied), Toast.LENGTH_SHORT)
                     .show()
             }
-            R.id.shareSelection -> {
-                Log.v(LOG_TAG, "-> onTextSelectionItemClicked -> shareSelection -> $selectedText")
-                UiUtil.share(context, selectedText)
-            }
-            R.id.defineSelection -> {
+
+            R.id.translateSelection -> {
                 Log.v(LOG_TAG, "-> onTextSelectionItemClicked -> defineSelection -> $selectedText")
+                TranslateUtil.sendTranslateBroadcastEvent(context, selectedText)
                 uiHandler.post { showDictDialog(selectedText) }
             }
             else -> {
@@ -381,6 +379,11 @@ class FolioWebView : WebView {
 
     private fun onHighlightColorItemsClicked(style: HighlightStyle, isAlreadyCreated: Boolean) {
         parentFragment.highlight(style, isAlreadyCreated)
+        dismissPopupWindow()
+    }
+
+    private fun onAddItemsClicked(style: HighlightStyle, isAlreadyCreated: Boolean) {
+        parentFragment.add(style, isAlreadyCreated)
         dismissPopupWindow()
     }
 
