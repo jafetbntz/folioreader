@@ -316,21 +316,38 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
             pageCountTextView.text = it
         })
 
-        if (ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) != PackageManager.PERMISSION_GRANTED
+        if (!hasPermission()
         ) {
-            ActivityCompat.requestPermissions(
-                this,
-                getWriteExternalStoragePerms(),
-                WRITE_EXTERNAL_STORAGE_REQUEST
-            )
+            requestPermission()
         } else {
             setupBook()
         }
     }
 
+    private fun requestPermission() {
+        ActivityCompat.requestPermissions(
+            this,
+            getWriteExternalStoragePerms(),
+            WRITE_EXTERNAL_STORAGE_REQUEST
+        )
+    }
+
+    private fun hasPermission(): Boolean  {
+
+
+        if (Build.VERSION.SDK_INT >= 33) {
+            // No need permission after API 33
+            return true;
+        }
+
+        val permissionStatus =  ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
+
+        return permissionStatus == PackageManager.PERMISSION_GRANTED
+
+    }
     private fun initActionBar() {
         appBarLayout = findViewById(R.id.appBarLayout)
         toolbar = findViewById(R.id.toolbar)
@@ -1197,7 +1214,7 @@ class FolioActivity : AppCompatActivity(), FolioActivityCallback, MediaControlle
         grantResults: IntArray
     ) {
         when (requestCode) {
-            WRITE_EXTERNAL_STORAGE_REQUEST -> if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            WRITE_EXTERNAL_STORAGE_REQUEST -> if (hasPermission()) {
                 setupBook()
             } else {
                 Toast.makeText(
